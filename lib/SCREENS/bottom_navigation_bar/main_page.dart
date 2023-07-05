@@ -22,13 +22,6 @@ class _MainPageState extends State<MainPage> {
     const LibraryScreen(),
     const UserScreen(),
   ];
-
-  @override
-  void initState() {
-    FocusManager.instance.primaryFocus?.unfocus();
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

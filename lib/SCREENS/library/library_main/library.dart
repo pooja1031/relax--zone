@@ -66,7 +66,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const LikedSongs()),
+                                builder: (context) => LikedSongs()),
                           );
                         },
                         child: const Text(
@@ -139,7 +139,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const RecentlyPlayed()),
+                                  builder: (context) => RecentlyPlayed()),
                             );
                           },
                           child: const Text(

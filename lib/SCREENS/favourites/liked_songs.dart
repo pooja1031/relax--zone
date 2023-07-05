@@ -4,6 +4,7 @@ import 'dart:developer';
 
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:music_app/SCREENS/favourites/addtofavourites.dart';
@@ -11,26 +12,23 @@ import 'package:music_app/SCREENS/main_player/now_playing_screen.dart';
 import 'package:music_app/db/likedsongs.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
+import '../../bloc/favourites_bloc/favourites_bloc.dart';
 import '../../db/mostlyplayed.dart';
 import '../../db/recentlyplayedmodel.dart';
 import '../../functions/dbfunctions.dart';
 
-class LikedSongs extends StatefulWidget {
-  const LikedSongs({super.key});
+class LikedSongs extends StatelessWidget {
+  LikedSongs({super.key});
 
-  @override
-  State<LikedSongs> createState() => _LikedSongsState();
-}
-
-final player = AssetsAudioPlayer.withId('0');
-
-class _LikedSongsState extends State<LikedSongs> {
   final List<favourites> likedsongs = [];
+
   final box = FavouriteBox.getInstance();
+  final player = AssetsAudioPlayer.withId('0');
   late List<favourites> liked = box.values.toList();
   List<Audio> favsongs = [];
   @override
-  void initState() {
+  @override
+  Widget build(BuildContext context) {
     final List<favourites> favsong = box.values.toList().reversed.toList();
     for (var i in favsong) {
       favsongs.add(Audio.file(i.songurl.toString(),
@@ -40,12 +38,6 @@ class _LikedSongsState extends State<LikedSongs> {
             id: i.id.toString(),
           )));
     }
-    setState(() {});
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     var height;
     return Container(
       color: Color.fromARGB(255, 9, 5, 5),
@@ -69,30 +61,41 @@ class _LikedSongsState extends State<LikedSongs> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   appbar(),
-                  ValueListenableBuilder<Box<favourites>>(
-                    valueListenable: box.listenable(),
-                    builder: (context, Box<favourites> dbfavour, child) {
-                      List<favourites> likedsongs =
-                          dbfavour.values.toList().reversed.toList();
-                      log(likedsongs.toString());
-                      //log(likedsongs[0].songname!);
-                      return Expanded(
-                        child: GridView.count(
-                          shrinkWrap: true,
-                          crossAxisCount: 2,
-                          children: List.generate(
-                            likedsongs.length,
-                            (index) => favorite(
-                              favour: favsongs,
-                              audioPlayer: player,
-                              index: index,
-                              song: likedsongs[index].songname!,
-                              image: likedsongs[index].id!,
-                              time: likedsongs[index].duration!,
-                              context: context,
-                            ),
-                          ),
-                        ),
+                  BlocBuilder<FavouritesBloc, FavouritesState>(
+                    builder: (context, state) {
+                      if (state is FavouritesInitial) {
+                        context.read<FavouritesBloc>().add(GetFavSongs());
+                      }
+                      if (state is DisplayFavSongs) {
+                        return state.favorites.isNotEmpty
+                            ? Expanded(
+                                child: GridView.count(
+                                  shrinkWrap: true,
+                                  crossAxisCount: 2,
+                                  children: List.generate(
+                                    state.favorites.length,
+                                    (index) => favorite(
+                                      favour: favsongs,
+                                      audioPlayer: player,
+                                      index: index,
+                                      song: state.favorites[index].songname!,
+                                      image: state.favorites[index].id!,
+                                      time: state.favorites[index].duration!,
+                                      context: context,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: const Text(
+                                  "You haven't liked any songs!",
+                                  style: TextStyle(color: Colors.greenAccent),
+                                ),
+                              );
+                      }
+                      return const Center(
+                        child: CircularProgressIndicator(),
                       );
                     },
                   )

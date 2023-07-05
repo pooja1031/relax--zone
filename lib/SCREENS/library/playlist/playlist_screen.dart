@@ -1,23 +1,19 @@
 // ignore_for_file: prefer_const_constructors, duplicate_ignore, sized_box_for_whitespace
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:music_app/SCREENS/library/playlist/playlistcurrent.dart';
+import 'package:music_app/bloc/playlist_bloc/playlist_bloc.dart';
 import '../../../db/playlist.dart';
 
 import '../../../db/songfilemodel.dart';
 import '../../../functions/addplaylist.dart';
 
-class Playlist extends StatefulWidget {
-  const Playlist({super.key});
+class Playlist extends StatelessWidget {
+  Playlist({super.key});
 
-  @override
-  State<Playlist> createState() => _PlaylistState();
-}
-
-// ignore: camel_case_types
-class _PlaylistState extends State<Playlist> {
   final playlistbox = PlaylistSongsbox.getInstance();
   late List<PlaylistSongs> playlistsongs = playlistbox.values.toList();
   @override
@@ -52,117 +48,122 @@ class _PlaylistState extends State<Playlist> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Expanded(
-                        child: ValueListenableBuilder(
-                      valueListenable: playlistbox.listenable(),
-                      builder: (context, playlistsongs, child) {
-                        List<PlaylistSongs> playlistsong =
-                            playlistsongs.values.toList();
-
-                        return playlistsong.isNotEmpty
-                            ? GridView.count(
-                                shrinkWrap: true,
-                                crossAxisCount: 2,
-                                children: List.generate(
-                                  playlistsong.length,
-                                  (index) => Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 16.0,
-                                    ),
-                                    child: SizedBox(
-                                      height: 400,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          InkWell(
-                                            onTap: () {
-                                              Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                      builder: ((context) =>
-                                                          CurrentPlaylist(
-                                                            index: index,
-                                                            playlistname:
-                                                                playlistsong[
-                                                                        index]
-                                                                    .playlistname,
-                                                          ))));
-                                            },
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              child: SizedBox.fromSize(
-                                                size: const Size.fromRadius(48),
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(28),
-                                                  child: Image.asset(
-                                                      'assests/images/homemusics.png',
-                                                      height: 124,
-                                                      width: 124,
-                                                      fit: BoxFit.cover),
-                                                ),
-                                              ),
-                                            ),
+                    Expanded(child: BlocBuilder<PlaylistBloc, PlaylistState>(
+                        builder: (context, state) {
+                      if (state is PlaylistInitial) {
+                        context.read<PlaylistBloc>().add(GetPlayListSongs());
+                      }
+                      if (state is DisplayPlaylist) {
+                        return GridView.count(
+                          shrinkWrap: true,
+                          crossAxisCount: 2,
+                          children: List.generate(
+                            state.Playlist.length,
+                            (index) => Padding(
+                              padding: const EdgeInsets.only(
+                                left: 16.0,
+                              ),
+                              child: SizedBox(
+                                height: 400,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: ((context) =>
+                                                    CurrentPlaylist(
+                                                      index: index,
+                                                      playlistname: state
+                                                          .Playlist[index]
+                                                          .playlistname,
+                                                    ))));
+                                      },
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: SizedBox.fromSize(
+                                          size: const Size.fromRadius(48),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(28),
+                                            child: Image.asset(
+                                                'assests/images/homemusics.png',
+                                                height: 124,
+                                                width: 124,
+                                                fit: BoxFit.cover),
                                           ),
-                                          Row(
-                                            children: [
-                                              SizedBox(
-                                                width: 100,
-                                                child: Text(
-                                                  playlistsong[index]
-                                                      .playlistname!,
-                                                  style: GoogleFonts.lato(
-                                                    textStyle: const TextStyle(
-                                                        fontSize: 20,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                ),
-                                              ),
-                                              PopupMenuButton<int>(
-                                                itemBuilder: (context) => [
-                                                  // PopupMenuItem 1
-                                                  PopupMenuItem(
-                                                    onTap: () {
-                                                      deleteplaylist(index);
-                                                    },
-                                                    value: 1,
-                                                    // row with 2 children
-                                                    child: Row(
-                                                      children: const [
-                                                        Icon(Icons.delete),
-                                                        SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        Text("Delete")
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 100,
+                                          child: Text(
+                                            state.Playlist[index].playlistname!,
+                                            style: GoogleFonts.lato(
+                                              textStyle: const TextStyle(
+                                                  fontSize: 20,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuButton<int>(
+                                          itemBuilder: (context) => [
+                                            // PopupMenuItem 1
+                                            PopupMenuItem(
+                                              onTap: () {
+                                                // deleteplaylist(index);
+                                                context
+                                                    .read<PlaylistBloc>()
+                                                    .add(DeletePlaylist(index));
+                                              },
+                                              value: 1,
+                                              // row with 2 children
+                                              child: Row(
+                                                children: const [
+                                                  Icon(Icons.delete),
+                                                  SizedBox(
+                                                    width: 10,
+                                                  ),
+                                                  Text("Delete")
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              )
-                            : const Center(
-                                child: Text(
-                                  'Playlist is empty',
-                                  style: TextStyle(
-                                      fontSize: 20,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              );
-                      },
-                    ))
+                              ),
+                            ),
+                          ),
+                        );
+                        // : const Center(
+                        //     child: Text(
+                        //       'Playlist is empty',
+                        //       style: TextStyle(
+                        //           fontSize: 20,
+                        //           color: Colors.white,
+                        //           fontWeight: FontWeight.bold),
+                        //     ),
+                        //   );
+                      }
+                      return const Center(
+                        child: Text(
+                          'Playlist is empty',
+                          style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    }))
                   ],
                 ),
               ),

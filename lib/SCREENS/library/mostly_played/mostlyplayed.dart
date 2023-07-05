@@ -28,8 +28,30 @@ class _MostPlayedPageState extends State<MostPlayedPage> {
   final AssetsAudioPlayer audioPlayer = AssetsAudioPlayer.withId('0');
   List<Audio> songs = [];
 
+  // @override
+  // void initState() {
+  //   List<MostPlayed> mostsong = box.values.toList();
+  //   int i = 0;
+  //   for (var element in mostsong) {
+  //     if (element.count > 3) {
+  //       mostplayedsongs.insert(i, element);
+  //       i++;
+  //     }
+  //   }
+  //   for (var items in mostplayedsongs) {
+  //     songs.add(Audio.file(items.songurl,
+  //         metas: Metas(
+  //             title: items.songname,
+  //             artist: items.artist,
+  //             id: items.id.toString())));
+  //   }
+
+  //   super.initState();
+  // }
+
+  List<MostPlayed> mostplayedsongs = [];
   @override
-  void initState() {
+  Widget build(BuildContext context) {
     List<MostPlayed> mostsong = box.values.toList();
     int i = 0;
     for (var element in mostsong) {
@@ -45,13 +67,6 @@ class _MostPlayedPageState extends State<MostPlayedPage> {
               artist: items.artist,
               id: items.id.toString())));
     }
-
-    super.initState();
-  }
-
-  List<MostPlayed> mostplayedsongs = [];
-  @override
-  Widget build(BuildContext context) {
     orientation = MediaQuery.of(context).orientation;
 
     //size of the window

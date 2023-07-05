@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -11,27 +12,23 @@ import 'package:music_app/SCREENS/main_player/now_playing_screen.dart';
 import 'package:music_app/functions/dbfunctions.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
+import '../../../bloc/recentyplayed_bloc/recentlyplayed_bloc.dart';
 import '../../../db/mostlyplayed.dart';
 import '../../../db/recentlyplayedmodel.dart';
 import '../../home/home_page.dart';
 
-class RecentlyPlayed extends StatefulWidget {
-  const RecentlyPlayed({super.key});
+class RecentlyPlayed extends StatelessWidget {
+  RecentlyPlayed({super.key});
 
-  @override
-  State<RecentlyPlayed> createState() => _RecentlyPlayedState();
-}
+  var orientation, size, height, width;
+  final player = AssetsAudioPlayer.withId('0');
 
-var orientation, size, height, width;
-final player = AssetsAudioPlayer.withId('0');
-
-class _RecentlyPlayedState extends State<RecentlyPlayed> {
   final List<RecentlyPlayedModel> recentsongs = [];
   final box = RecentlyPlayedBox.getInstance();
   late List<RecentlyPlayedModel> recent = box.values.toList();
   List<Audio> recsongs = [];
   @override
-  void initState() {
+  Widget build(BuildContext context) {
     final List<RecentlyPlayedModel> recentsong =
         box.values.toList().reversed.toList();
     for (var i in recentsong) {
@@ -42,12 +39,10 @@ class _RecentlyPlayedState extends State<RecentlyPlayed> {
             id: i.id.toString(),
           )));
     }
-    setState(() {});
-    super.initState();
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      BlocProvider.of<RecentlyplayedBloc>(context).add(GetRecentlyPlayed());
+    });
     orientation = MediaQuery.of(context).orientation;
     //size of the window
     size = MediaQuery.of(context).size;
@@ -69,40 +64,52 @@ class _RecentlyPlayedState extends State<RecentlyPlayed> {
                   width: width / 1,
                   height: height / 15.5,
                 ),
-                ValueListenableBuilder<Box<RecentlyPlayedModel>>(
-                  valueListenable: recentlyPlayedBox.listenable(),
-                  builder: (context, dbrecent, child) {
-                    List<RecentlyPlayedModel> recentsongs =
-                        dbrecent.values.toList().reversed.toList();
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16.5),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: 2,
-                                children: List.generate(
-                                  recentsongs.length,
-                                  (index) => favoritedummy(
-                                      index: index,
-                                      context: context,
-                                      recentsongs: recsongs,
-                                      audioplayer: player,
-                                      song: recentsongs[index].songname!,
-                                      image: recentsongs[index].id!,
-                                      time: recentsongs[index].duration!),
-                                ),
+                BlocBuilder<RecentlyplayedBloc, RecentlyplayedState>(
+                    builder: (context, state) {
+                  if (state is RecentlyplayedInitial) {
+                    context.read<RecentlyplayedBloc>().add(GetRecentlyPlayed());
+                  }
+                  if (state is DisplayRecently) {
+                    return state.recentPlay.isNotEmpty
+                        ? Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 16.5),
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: GridView.count(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      crossAxisCount: 2,
+                                      children: List.generate(
+                                        recentsongs.length,
+                                        (index) => favoritedummy(
+                                            index: index,
+                                            context: context,
+                                            recentsongs: recsongs,
+                                            audioplayer: player,
+                                            song: recentsongs[index].songname!,
+                                            image: recentsongs[index].id!,
+                                            time: recentsongs[index].duration!),
+                                      ),
+                                    ),
+                                  )
+                                ],
                               ),
-                            )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                            ),
+                          )
+                        : const Center(
+                            child: Text(
+                              "Your Recently played songs",
+                              style: TextStyle(color: Colors.greenAccent),
+                            ),
+                          );
+                  }
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }),
               ],
             ),
           ]),
